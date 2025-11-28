@@ -18,12 +18,14 @@ from pathlib import Path
 # 如果环境变量不存在，直接设置默认值
 if not os.getenv("SUPABASE_URL"):
     os.environ["SUPABASE_URL"] = "https://veffyhfyxydywjapjpgl.supabase.co"
-    os.environ["SUPABASE_KEY"] = "eyJhb6ci0iJIUzI1NiISInRo5cCI6IKpXVCJ9.eyJpc35Mi0iJzdXBhYmFzZSIsSInJLZiI6InZLZmZ5a6Z5eHLKeXdqYXBqc6dsIIi"
+    os.environ["SUPABASE_KEY"] = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmZ5aGZ5eHlkeXdqYXBqcGdsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3ODIyNjcsImV4cCI6MjA3OTM1ODI2N30.wPTLJpsfQwXGhpb67k6YnnYcm9w_NxbrHJlROjcXa8g"
+    
     os.environ["TEACHER_USERNAME"] = "admin" 
     os.environ["TEACHER_PASSWORD"] = "654321"
     print("使用硬编码的环境变量")
 else:
     print("使用Vercel环境变量")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ==================== 修复结束 ====================
 load_dotenv()
 
@@ -35,14 +37,6 @@ frontend_dir = current_dir.parent / 'frontend'
 if frontend_dir.exists():
     sys.path.append(str(frontend_dir))
 
-# Supabase 配置
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# 教师账号配置
-TEACHER_USERNAME = os.getenv("TEACHER_USERNAME")
-TEACHER_PASSWORD = os.getenv("TEACHER_PASSWORD")
 
 
 # ==================== 工具函数 ====================
