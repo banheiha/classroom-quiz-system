@@ -1,0 +1,2310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>课堂答题系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ==================== CSS变量定义 ==================== */
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --success-color: #4cc9f0;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+        }
+
+        /* ==================== 全局样式 ==================== */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fb;
+            color: #333;
+        }
+
+        /* ==================== 导航栏样式 ==================== */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ==================== 卡片样式 ==================== */
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border: none;
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 15px 20px;
+            font-weight: 600;
+        }
+
+        /* ==================== 按钮样式 ==================== */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 500;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4cc9f0, #4895ef);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 500;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f72585, #b5179e);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 500;
+        }
+
+        /* ==================== 标题样式 ==================== */
+        .section-title {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--success-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        /* ==================== 特殊卡片样式 ==================== */
+        .question-card {
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .record-card {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .tab-content {
+            padding: 20px 0;
+        }
+
+        /* ==================== 登录容器样式 ==================== */
+        .login-container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 15px;
+            background-color: white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .student-quiz-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* ==================== 提示徽章样式 ==================== */
+        .hint-badge {
+            background: linear-gradient(135deg, #ff9e00, #ff6b00);
+            color: white;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        /* ==================== 答案状态样式 ==================== */
+        .correct-answer {
+            color: #4caf50;
+            font-weight: 600;
+        }
+
+        .wrong-answer {
+            color: #f44336;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .question-counter {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* ==================== 结果摘要样式 ==================== */
+        .result-summary {
+            text-align: center;
+            padding: 30px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #4cc9f0, #4895ef);
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .score-display {
+            font-size: 48px;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        .accuracy-display {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        /* ==================== 教师专用样式 ==================== */
+        .teacher-only {
+            display: none;
+        }
+
+        .teacher-logged-in .teacher-only {
+            display: block;
+        }
+
+        .teacher-logged-in .teacher-login-btn {
+            display: none;
+        }
+
+        .student-section, .teacher-section {
+            min-height: 500px;
+        }
+
+        /* ==================== 答题界面样式 ==================== */
+        .question-display {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        /* ==================== 答案行样式 ==================== */
+        .answer-line {
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .answer-line.correct {
+            background-color: rgba(76, 175, 80, 0.1);
+            border-left: 4px solid #4caf50;
+        }
+
+        .answer-line.wrong {
+            background-color: rgba(244, 67, 54, 0.1);
+            border-left: 4px solid #f44336;
+        }
+
+        .answer-line-number {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .answer-input {
+            flex: 1;
+            max-width: 400px;
+            transition: all 0.3s ease;
+        }
+
+        .answer-input:disabled {
+            background-color: #f8f9fa;
+            opacity: 0.8;
+        }
+
+        .answer-status {
+            margin-left: 15px;
+            font-size: 20px;
+            width: 30px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .correct .answer-status {
+            color: #4caf50;
+        }
+
+        .wrong .answer-status {
+            color: #f44336;
+        }
+
+        .line-feedback {
+            font-size: 14px;
+            margin-top: 5px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .hint-button {
+            margin-left: 10px;
+            padding: 4px 8px;
+            font-size: 12px;
+            background: linear-gradient(135deg, #ff9e00, #ff6b00);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .hint-button:hover {
+            background: linear-gradient(135deg, #ff6b00, #ff9e00);
+        }
+
+        .hint-display {
+            margin-left: 10px;
+            padding: 4px 8px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #856404;
+            flex-shrink: 0;
+        }
+
+        .answer-hint-area {
+            display: flex;
+            align-items: center;
+            margin-left: 10px;
+        }
+
+        .correct-answer-display {
+            margin-left: 15px;
+            color: #4caf50;
+            font-weight: 500;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .quiz-controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 15px;
+        }
+
+        /* ==================== 连接状态样式 ==================== */
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+
+        .connection-online {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        .connection-offline {
+            background-color: #f44336;
+            color: white;
+        }
+
+        /* ==================== 图片样式 ==================== */
+        .question-image {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 15px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-color);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--primary-color);
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* ==================== 密码输入样式 ==================== */
+        .password-input-group {
+            position: relative;
+        }
+
+        .password-input-group .form-control {
+            padding-right: 40px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            z-index: 5;
+            padding: 5px;
+        }
+
+        /* ==================== 答案提示区域样式 ==================== */
+        .answer-hint-area {
+            display: flex;
+            align-items: center;
+            margin-left: 10px;
+            min-width: 120px;
+            justify-content: flex-end;
+        }
+
+        /* ==================== 学生记录详情样式 ==================== */
+        .student-record-card {
+            border-left: 4px solid #4cc9f0;
+            margin-bottom: 15px;
+        }
+
+        .record-detail {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .correct-record {
+            border-left: 4px solid #4caf50;
+        }
+
+        .wrong-record {
+            border-left: 4px solid #f44336;
+        }
+
+        .record-summary {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* ==================== 学生详情卡片样式 ==================== */
+        .student-detail-card {
+            border-left: 4px solid #4cc9f0;
+        }
+
+        .student-info-card {
+            text-align: center;
+        }
+
+        .student-stats {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .view-detail-btn {
+            font-size: 0.8rem;
+            padding: 3px 8px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ==================== 连接状态指示器 ==================== -->
+    <div id="connectionStatus" class="connection-status d-none">
+        <i class="bi bi-wifi"></i> <span id="connectionText">连接中...</span>
+    </div>
+
+    <!-- ==================== 导航栏 ==================== -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-journal-bookmark-fill me-2"></i>
+                课堂答题系统
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#student-section">学生答题</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link teacher-only" href="#teacher-section">教师管理</a>
+                    </li>
+                </ul>
+                <div class="navbar-nav">
+                    <button class="btn btn-outline-light teacher-login-btn" data-bs-toggle="modal" data-bs-target="#loginModal">
+                        <i class="bi bi-person-badge me-1"></i> 教师登录
+                    </button>
+                    <div class="teacher-only">
+                        <span class="navbar-text me-3">
+                            <i class="bi bi-person-check me-1"></i> 教师模式
+                        </span>
+                        <button class="btn btn-outline-light" id="logoutBtn">
+                            <i class="bi bi-box-arrow-right me-1"></i> 退出
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ==================== 主要内容区域 ==================== -->
+    <div class="container mt-4">
+        <!-- ==================== 学生答题区域 ==================== -->
+        <section id="student-section" class="student-section">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="section-title">学生答题</h2>
+                </div>
+            </div>
+
+            <!-- 学生信息输入 -->
+            <div class="row" id="student-info-section">
+                <div class="col-md-6 offset-md-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-person-circle me-2"></i> 学生信息
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="studentName" class="form-label">请输入您的姓名</label>
+                                <input type="text" class="form-control" id="studentName" placeholder="例如：张三">
+                            </div>
+                            <button class="btn btn-primary w-100" id="startQuizBtn">
+                                <i class="bi bi-play-circle me-2"></i> 开始答题
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 答题界面 -->
+            <div class="row d-none" id="quiz-section">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-question-circle me-2"></i> 答题中</span>
+                            <div>
+                                <span class="question-counter" id="questionCounter">题目 1/1</span>
+                                <span class="badge bg-light text-dark ms-2" id="timer">00:00</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="progress mb-4">
+                                <div class="progress-bar" id="quizProgress" role="progressbar" style="width: 0%"></div>
+                            </div>
+
+                            <!-- 题目显示区域 -->
+                            <div class="question-display">
+                                <h3 id="question-title">题目加载中...</h3>
+                                <div id="question-image-container"></div>
+                            </div>
+
+                            <!-- 答案输入区域 -->
+                            <div id="answer-inputs-container">
+                                <!-- 动态生成的答案行 -->
+                            </div>
+
+                            <!-- 答题控制按钮 -->
+                            <div class="quiz-controls">
+                                <button class="btn btn-success" id="submitAnswerBtn" disabled>
+                                    <i class="bi bi-check-circle me-1"></i> 提交本题答案
+                                </button>
+                                <button class="btn btn-primary d-none" id="nextQuestionBtn">
+                                    <i class="bi bi-arrow-right me-1"></i> 下一题
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 答题结果 -->
+            <div class="row d-none" id="result-section">
+                <div class="col-12">
+                    <div class="result-summary">
+                        <h3>答题完成!</h3>
+                        <div class="score-display" id="finalScore">0/0</div>
+                        <div class="accuracy-display" id="finalAccuracy">正确率: 0%</div>
+                        <p>用时: <span id="finalDuration">00:00</span></p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-card-checklist me-2"></i> 答题详情
+                        </div>
+                        <div class="card-body">
+                            <div id="answer-details">
+                                <!-- 答题详情将通过JS动态加载 -->
+                            </div>
+                            <div class="mt-3 text-center">
+                                <button class="btn btn-primary" id="restartQuizBtn">
+                                    <i class="bi bi-arrow-repeat me-1"></i> 重新答题
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 教师管理区域 ==================== -->
+        <section id="teacher-section" class="teacher-section teacher-only">
+            <div class="row">
+                <div class="col-12">
+                    <h2 class="section-title">教师管理</h2>
+                </div>
+            </div>
+
+            <ul class="nav nav-tabs" id="teacherTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="questions-tab" data-bs-toggle="tab" data-bs-target="#questions" type="button" role="tab">
+                        <i class="bi bi-journal-text me-1"></i> 题目管理
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="records-tab" data-bs-toggle="tab" data-bs-target="#records" type="button" role="tab">
+                        <i class="bi bi-bar-chart me-1"></i> 成绩记录
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="account-tab" data-bs-toggle="tab" data-bs-target="#account" type="button" role="tab">
+                        <i class="bi bi-person-gear me-1"></i> 账号管理
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="teacherTabContent">
+                <!-- 题目管理 -->
+                <div class="tab-pane fade show active" id="questions" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="bi bi-plus-circle me-2"></i> 添加题目
+                                </div>
+                                <div class="card-body">
+                                    <form id="addQuestionForm">
+                                        <div class="mb-3">
+                                            <label for="questionTitle" class="form-label">题目</label>
+                                            <textarea class="form-control" id="questionTitle" rows="3" placeholder="请输入题目内容"></textarea>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="questionAnswers" class="form-label">正确答案（每行一个答案）</label>
+                                            <textarea class="form-control" id="questionAnswers" rows="3" placeholder="请输入正确答案，每行一个"></textarea>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">题目图片（可选）</label>
+                                            <div class="upload-area" id="uploadArea">
+                                                <i class="bi bi-cloud-upload fs-1 text-muted"></i>
+                                                <p class="mt-2">点击或拖拽图片到这里上传</p>
+                                                <small class="text-muted">支持 PNG, JPG, JPEG, GIF 格式</small>
+                                                <input type="file" id="imageUpload" accept="image/*" class="d-none">
+                                                <img id="imagePreview" class="image-preview">
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="bi bi-check-circle me-1"></i> 添加题目
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-list-task me-2"></i> 题目列表</span>
+                                    <span class="badge bg-primary" id="questionsCount">0 个题目</span>
+                                </div>
+                                <div class="card-body">
+                                    <div id="questionsList">
+                                        <!-- 题目列表将通过JS动态加载 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 成绩记录（合并数据分析功能） -->
+                <div class="tab-pane fade" id="records" role="tabpanel">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-bar-chart me-2"></i> 学生成绩记录</span>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-danger me-2" id="clearRecordsBtn">
+                                            <i class="bi bi-trash me-1"></i> 清空所有记录
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-primary" id="refreshRecordsBtn">
+                                            <i class="bi bi-arrow-clockwise me-1"></i> 刷新
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>学生姓名</th>
+                                                    <th>学生ID</th>
+                                                    <th>总得分</th>
+                                                    <th>总正确率</th>
+                                                    <th>总用时</th>
+                                                    <th>最后答题时间</th>
+                                                    <th>操作</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="recordsTable">
+                                                <!-- 成绩记录将通过JS动态加载 -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 学生详细答题记录 -->
+                            <div class="card mt-4 d-none" id="studentDetailCard">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-person-lines-fill me-2"></i> 学生答题详情</span>
+                                    <button class="btn btn-sm btn-outline-secondary" id="closeDetailBtn">
+                                        <i class="bi bi-x-lg me-1"></i> 关闭详情
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <!-- 学生基本信息 -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-3">
+                                            <div class="card text-center bg-light">
+                                                <div class="card-body">
+                                                    <h5 class="card-title" id="detailStudentName">-</h5>
+                                                    <p class="card-text text-muted">学生姓名</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card text-center">
+                                                <div class="card-body">
+                                                    <h3 class="card-title text-primary" id="detailAccuracy">0%</h3>
+                                                    <p class="card-text">总体正确率</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card text-center">
+                                                <div class="card-body">
+                                                    <h3 class="card-title text-success" id="detailTotalCorrect">0</h3>
+                                                    <p class="card-text">总正确数</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card text-center">
+                                                <div class="card-body">
+                                                    <h3 class="card-title text-info" id="detailTotalQuestions">0</h3>
+                                                    <p class="card-text">总答题数</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 详细答题记录 -->
+                                    <h5 class="mb-3">答题记录详情</h5>
+                                    <div id="studentRecordsList">
+                                        <!-- 学生详细记录将通过JS动态加载 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 账号管理 -->
+                <div class="tab-pane fade" id="account" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="bi bi-person-gear me-2"></i> 修改账号信息
+                                </div>
+                                <div class="card-body">
+                                    <form id="updateAccountForm">
+                                        <div class="mb-3 password-input-group">
+                                            <label for="currentPassword" class="form-label">当前密码</label>
+                                            <input type="password" class="form-control" id="currentPassword" required>
+                                            <button type="button" class="password-toggle" id="toggleCurrentPassword">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="newUsername" class="form-label">新用户名</label>
+                                            <input type="text" class="form-control" id="newUsername" required>
+                                        </div>
+                                        <div class="mb-3 password-input-group">
+                                            <label for="newPassword" class="form-label">新密码</label>
+                                            <input type="password" class="form-control" id="newPassword" required>
+                                            <button type="button" class="password-toggle" id="toggleNewPassword">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="bi bi-check-circle me-1"></i> 更新账号信息
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ==================== 教师登录模态框 ==================== -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">教师登录</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="teacherLoginForm">
+                        <div class="mb-3">
+                            <label for="teacherUsername" class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="teacherUsername" placeholder="请输入用户名">
+                        </div>
+                        <div class="mb-3 password-input-group">
+                            <label for="teacherPassword" class="form-label">密码</label>
+                            <input type="password" class="form-control" id="teacherPassword" placeholder="请输入密码">
+                            <button type="button" class="password-toggle" id="toggleTeacherPassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> 登录
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 脚注 ==================== -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container text-center">
+            <p>课堂答题系统 &copy; Classroom Quiz</p>
+        </div>
+    </footer>
+
+    <!-- ==================== 脚本引入 ==================== -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- ==================== JavaScript 代码 ==================== -->
+    <script>
+        // ==================== 配置常量 ====================
+        const API_BASE = import.meta.env.VITE_API_BASE || 'https://your-backend-url.vercel.app/api';
+
+        // ==================== 全局状态变量 ====================
+        let teacherToken = null;
+        let studentInfo = null;
+        let currentQuestion = null;
+        let currentQuestionIndex = 0;
+        let allQuestions = [];
+        let quizResults = [];
+        let studentAnswers = [];
+        let quizStartTime = null;
+        let timerInterval = null;
+        let currentAnswerLines = [];
+        let isOnline = true;
+
+        // ==================== 初始化函数 ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            checkConnection();
+            bindEventListeners();
+            initPasswordToggle();
+        });
+
+        // ==================== 工具函数 ====================
+        function initPasswordToggle() {
+            // 教师登录模态框的密码切换
+            const toggleTeacherPassword = document.getElementById('toggleTeacherPassword');
+            const teacherPassword = document.getElementById('teacherPassword');
+
+            if (toggleTeacherPassword && teacherPassword) {
+                toggleTeacherPassword.addEventListener('click', function() {
+                    const type = teacherPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+                    teacherPassword.setAttribute('type', type);
+                    this.innerHTML = type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+                });
+            }
+
+            // 修改账号表单的密码切换
+            const toggleCurrentPassword = document.getElementById('toggleCurrentPassword');
+            const currentPassword = document.getElementById('currentPassword');
+            const toggleNewPassword = document.getElementById('toggleNewPassword');
+            const newPassword = document.getElementById('newPassword');
+
+            if (toggleCurrentPassword && currentPassword) {
+                toggleCurrentPassword.addEventListener('click', function() {
+                    const type = currentPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+                    currentPassword.setAttribute('type', type);
+                    this.innerHTML = type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+                });
+            }
+
+            if (toggleNewPassword && newPassword) {
+                toggleNewPassword.addEventListener('click', function() {
+                    const type = newPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+                    newPassword.setAttribute('type', type);
+                    this.innerHTML = type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+                });
+            }
+        }
+
+        // 检查后端连接状态
+        async function checkConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/questions`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    setOnlineStatus(true);
+                } else {
+                    setOnlineStatus(false);
+                }
+            } catch (error) {
+                console.error('后端连接失败:', error);
+                setOnlineStatus(false);
+            }
+        }
+
+        // 设置在线状态
+        function setOnlineStatus(online) {
+            isOnline = online;
+            const statusElement = document.getElementById('connectionStatus');
+            const textElement = document.getElementById('connectionText');
+
+            if (online) {
+                statusElement.className = 'connection-status connection-online';
+                textElement.textContent = '已连接到服务器';
+            } else {
+                statusElement.className = 'connection-status connection-offline';
+                textElement.textContent = '离线模式 (无法连接服务器)';
+            }
+
+            statusElement.classList.remove('d-none');
+        }
+
+        // 格式化时间
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // ==================== 事件绑定函数 ====================
+        function bindEventListeners() {
+            // 学生答题相关事件
+            document.getElementById('startQuizBtn').addEventListener('click', startQuiz);
+            document.getElementById('submitAnswerBtn').addEventListener('click', submitAnswer);
+            document.getElementById('nextQuestionBtn').addEventListener('click', nextQuestion);
+            document.getElementById('restartQuizBtn').addEventListener('click', restartQuiz);
+
+            // 教师相关事件
+            document.getElementById('teacherLoginForm').addEventListener('submit', teacherLogin);
+            document.getElementById('logoutBtn').addEventListener('click', teacherLogout);
+            document.getElementById('addQuestionForm').addEventListener('submit', addQuestion);
+            document.getElementById('refreshRecordsBtn').addEventListener('click', loadRecords);
+            document.getElementById('clearRecordsBtn').addEventListener('click', clearAllRecords);
+            document.getElementById('updateAccountForm').addEventListener('submit', updateTeacherAccount);
+            document.getElementById('closeDetailBtn').addEventListener('click', closeStudentDetail);
+
+            // 图片上传事件
+            document.getElementById('uploadArea').addEventListener('click', () => {
+                document.getElementById('imageUpload').click();
+            });
+
+            document.getElementById('imageUpload').addEventListener('change', handleImageUpload);
+
+            // 拖放上传
+            const uploadArea = document.getElementById('uploadArea');
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    document.getElementById('imageUpload').files = files;
+                    handleImageUpload();
+                }
+            });
+        }
+
+        // ==================== 学生答题功能 ====================
+        // 开始答题
+        async function startQuiz() {
+            const studentName = document.getElementById('studentName').value.trim();
+            if (!studentName) {
+                alert('请输入您的姓名');
+                return;
+            }
+
+            // 显示加载状态
+            document.getElementById('student-info-section').classList.add('d-none');
+            document.getElementById('quiz-section').classList.remove('d-none');
+            document.getElementById('question-title').textContent = '正在加载题目...';
+
+            try {
+                console.log('开始学生登录，姓名:', studentName);
+
+                // 先测试连接
+                await testConnection();
+
+                // 学生登录
+                const loginResponse = await fetch(`${API_BASE}/student/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: studentName
+                    })
+                });
+
+                console.log('登录响应状态:', loginResponse.status);
+
+                if (!loginResponse.ok) {
+                    const errorText = await loginResponse.text();
+                    console.error('登录响应错误:', errorText);
+                    throw new Error(`学生登录失败: ${loginResponse.status} ${errorText}`);
+                }
+
+                const loginData = await loginResponse.json();
+                console.log('登录响应数据:', loginData);
+
+                if (!loginData.success) {
+                    throw new Error(loginData.error || '学生登录失败');
+                }
+
+                studentInfo = {
+                    id: loginData.student_id,
+                    name: loginData.name
+                };
+
+                console.log('学生信息:', studentInfo);
+
+                // 获取所有题目
+                console.log('开始获取题目列表...');
+                const quizResponse = await fetch(`${API_BASE}/student/quiz`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!quizResponse.ok) {
+                    throw new Error('获取题目失败');
+                }
+
+                const quizData = await quizResponse.json();
+                console.log('题目数据:', quizData);
+
+                if (quizData.error) {
+                    throw new Error(quizData.error);
+                }
+
+                allQuestions = quizData.data;
+                currentQuestionIndex = 0;
+                quizResults = [];
+                quizStartTime = new Date();
+
+                if (allQuestions.length === 0) {
+                    throw new Error('暂无题目');
+                }
+
+                console.log(`成功加载 ${allQuestions.length} 个题目`);
+
+                // 开始计时
+                startTimer();
+
+                // 显示第一题
+                displayCurrentQuestion();
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('加载题目失败: ' + error.message);
+                // 恢复显示学生信息输入界面
+                document.getElementById('student-info-section').classList.remove('d-none');
+                document.getElementById('quiz-section').classList.add('d-none');
+            }
+        }
+
+        // 测试连接
+        async function testConnection() {
+            try {
+                console.log('测试后端连接...');
+                const testResponse = await fetch(`${API_BASE}/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ test: "data" })
+                });
+                const testData = await testResponse.json();
+                console.log('连接测试结果:', testData);
+            } catch (error) {
+                console.error('连接测试失败:', error);
+                throw new Error('无法连接到服务器，请检查后端服务是否启动');
+            }
+        }
+
+        // 显示当前题目
+        function displayCurrentQuestion() {
+            if (currentQuestionIndex >= allQuestions.length) {
+                showFinalResults();
+                return;
+            }
+
+            currentQuestion = allQuestions[currentQuestionIndex];
+
+            // 更新题目计数器
+            document.getElementById('questionCounter').textContent = `题目 ${currentQuestionIndex + 1}/${allQuestions.length}`;
+            document.getElementById('quizProgress').style.width = `${((currentQuestionIndex + 1) / allQuestions.length) * 100}%`;
+
+            // 显示题目
+            document.getElementById('question-title').textContent = currentQuestion.title;
+
+            // 修复图片显示问题
+            const imageContainer = document.getElementById('question-image-container');
+            imageContainer.innerHTML = '';
+
+            // 检查图片URL是否存在且有效
+            if (currentQuestion.image_url &&
+                currentQuestion.image_url.trim() !== '' &&
+                currentQuestion.image_url !== 'null' &&
+                currentQuestion.image_url !== 'undefined') {
+
+                console.log('显示题目图片:', currentQuestion.image_url);
+
+                const img = document.createElement('img');
+
+                // 直接使用图片URL，不添加基础URL（因为Supabase返回的是完整URL）
+                let imageUrl = currentQuestion.image_url;
+
+                // 确保URL是有效的
+                if (imageUrl.startsWith('http')) {
+                    img.src = imageUrl;
+                } else {
+                    // 如果不是完整URL，尝试构建完整URL
+                    img.src = `${window.location.origin}${imageUrl}`;
+                }
+
+                img.alt = '题目图片';
+                img.className = 'question-image';
+                img.style.display = 'block';
+
+                // 添加加载处理
+                img.onload = function() {
+                    console.log('图片加载成功:', this.src);
+                    this.style.display = 'block';
+                };
+
+                img.onerror = function() {
+                    console.error('图片加载失败:', this.src);
+                    this.style.display = 'none';
+                    const errorMsg = document.createElement('p');
+                    errorMsg.textContent = '图片加载失败';
+                    errorMsg.className = 'text-muted small';
+                    imageContainer.appendChild(errorMsg);
+                };
+
+                imageContainer.appendChild(img);
+            } else {
+                console.log('该题目没有图片或图片URL为空:', currentQuestion.image_url);
+            }
+
+            // 初始化当前题目的答案行状态
+            currentAnswerLines = currentQuestion.answers.map((answer, index) => ({
+                index: index,
+                correctAnswer: answer,
+                studentAnswer: '',
+                isAnswered: false,
+                isCorrect: false,
+                hintUsed: false,
+                hintDisplayed: '',
+                timeStarted: null,
+                hintTimeout: null
+            }));
+
+            // 生成答案输入行
+            renderAnswerLines();
+
+            // 重置按钮状态
+            document.getElementById('submitAnswerBtn').disabled = true;
+            document.getElementById('nextQuestionBtn').classList.add('d-none');
+            document.getElementById('submitAnswerBtn').classList.remove('d-none');
+
+            // 自动聚焦到第一个输入框
+            setTimeout(() => {
+                const firstInput = document.querySelector('.answer-input');
+                if (firstInput) {
+                    firstInput.focus();
+                }
+            }, 100);
+        }
+
+        // 渲染答案输入行
+        function renderAnswerLines() {
+            const container = document.getElementById('answer-inputs-container');
+            container.innerHTML = '';
+
+            currentAnswerLines.forEach((line, index) => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = `answer-line`;
+                if (line.isAnswered) {
+                    lineDiv.classList.add(line.isCorrect ? 'correct' : 'wrong');
+                }
+
+                lineDiv.innerHTML = `
+                    <div class="answer-line-number">${index + 1}</div>
+                    <input type="text" class="form-control answer-input"
+                           data-index="${index}"
+                           placeholder="请输入答案，按回车确认"
+                           value="${line.studentAnswer}"
+                           ${line.isAnswered ? 'disabled' : ''}>
+                    <div class="answer-hint-area">
+                        ${!line.isAnswered ? `<div class="hint-button d-none" data-index="${index}">提示</div>` : ''}
+                        ${line.hintDisplayed ? `<div class="hint-display">${line.hintDisplayed}</div>` : ''}
+                    </div>
+                    <div class="answer-status">
+                        ${line.isAnswered ? (line.isCorrect ? '✓' : '✗') : ''}
+                    </div>
+                    ${line.isAnswered && !line.isCorrect ? `<div class="correct-answer-display">正确答案: ${line.correctAnswer}</div>` : ''}
+                `;
+
+                container.appendChild(lineDiv);
+
+                // 绑定输入事件
+                const input = lineDiv.querySelector('.answer-input');
+                const hintButton = lineDiv.querySelector('.hint-button');
+
+                if (!line.isAnswered) {
+                    // 焦点事件 - 只在获得焦点的行启动提示计时器
+                    input.addEventListener('focus', function() {
+                        const lineIndex = parseInt(this.dataset.index);
+                        const currentLine = currentAnswerLines[lineIndex];
+
+                        // 清除可能存在的旧计时器
+                        if (currentLine.hintTimeout) {
+                            clearTimeout(currentLine.hintTimeout);
+                        }
+
+                        // 只有当前获得焦点的行才启动提示计时器
+                        currentLine.hintTimeout = setTimeout(() => {
+                            if (hintButton) {
+                                hintButton.classList.remove('d-none');
+                            }
+                        }, 5000); // 5秒后显示提示按钮
+                    });
+
+                    // 失去焦点事件 - 清除计时器
+                    input.addEventListener('blur', function() {
+                        const lineIndex = parseInt(this.dataset.index);
+                        const currentLine = currentAnswerLines[lineIndex];
+
+                        // 清除计时器（但保留已显示的提示按钮）
+                        if (currentLine.hintTimeout) {
+                            clearTimeout(currentLine.hintTimeout);
+                            currentLine.hintTimeout = null;
+                        }
+                    });
+
+                    input.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            checkAnswerLine(index);
+                        }
+                    });
+
+                    input.addEventListener('input', function() {
+                        const lineIndex = parseInt(this.dataset.index);
+                        currentAnswerLines[lineIndex].studentAnswer = this.value.trim();
+
+                        // 如果开始输入，清除提示超时（用户正在主动答题）
+                        if (this.value.trim() && currentAnswerLines[lineIndex].hintTimeout) {
+                            clearTimeout(currentAnswerLines[lineIndex].hintTimeout);
+                            currentAnswerLines[lineIndex].hintTimeout = null;
+                            if (hintButton) {
+                                hintButton.classList.add('d-none');
+                            }
+                        }
+                    });
+
+                    // 绑定提示按钮点击事件
+                    if (hintButton) {
+                        hintButton.addEventListener('click', function() {
+                            showHint(index);
+                        });
+                    }
+                }
+            });
+        }
+
+        // 显示提示
+        function showHint(lineIndex) {
+            const line = currentAnswerLines[lineIndex];
+            const correctAnswer = line.correctAnswer;
+
+            // 确保提示按钮隐藏
+            const hintButton = document.querySelector(`.hint-button[data-index="${lineIndex}"]`);
+            if (hintButton) {
+                hintButton.classList.add('d-none');
+            }
+
+            if (correctAnswer.length <= 3) {
+                // 如果答案长度小于等于3，显示整个答案
+                line.hintDisplayed = correctAnswer;
+            } else {
+                // 随机显示3-4个连续字符
+                const hintLength = Math.min(4, Math.max(3, Math.floor(correctAnswer.length / 2)));
+                const maxStart = correctAnswer.length - hintLength;
+                const startPos = Math.floor(Math.random() * (maxStart + 1));
+                line.hintDisplayed = correctAnswer.substring(startPos, startPos + hintLength);
+            }
+
+            line.hintUsed = true;
+
+            // 重新渲染该行
+            renderAnswerLines();
+
+            // 重新聚焦到当前输入框
+            const currentInput = document.querySelector(`.answer-input[data-index="${lineIndex}"]`);
+            if (currentInput) {
+                currentInput.focus();
+            }
+        }
+
+        // 检查单行答案
+        function checkAnswerLine(lineIndex) {
+            const line = currentAnswerLines[lineIndex];
+            const input = document.querySelector(`.answer-input[data-index="${lineIndex}"]`);
+
+            if (!input.value.trim()) {
+                alert('请输入答案');
+                return;
+            }
+
+            // 清除提示计时器
+            if (line.hintTimeout) {
+                clearTimeout(line.hintTimeout);
+                line.hintTimeout = null;
+            }
+
+            line.isAnswered = true;
+
+            // 修复答案比较问题 - 规范化答案（去除首尾空格，忽略大小写）
+            const normalizedUserAnswer = line.studentAnswer.trim().toLowerCase();
+            const normalizedCorrectAnswer = line.correctAnswer.trim().toLowerCase();
+
+            line.isCorrect = normalizedUserAnswer === normalizedCorrectAnswer;
+
+            console.log(`答案比较: "${normalizedUserAnswer}" vs "${normalizedCorrectAnswer}" = ${line.isCorrect}`);
+
+            // 重新渲染该行
+            renderAnswerLines();
+
+            // 检查是否所有行都已回答
+            checkAllLinesAnswered();
+
+            // 自动聚焦到下一个未答的输入框
+            setTimeout(() => {
+                const nextUnansweredIndex = currentAnswerLines.findIndex((line, idx) =>
+                    !line.isAnswered && idx > lineIndex
+                );
+                if (nextUnansweredIndex !== -1) {
+                    const nextInput = document.querySelector(`.answer-input[data-index="${nextUnansweredIndex}"]`);
+                    if (nextInput) {
+                        nextInput.focus();
+                    }
+                }
+            }, 100);
+        }
+
+        // 检查是否所有行都已回答
+        function checkAllLinesAnswered() {
+            const allAnswered = currentAnswerLines.every(line => line.isAnswered);
+            document.getElementById('submitAnswerBtn').disabled = !allAnswered;
+        }
+
+        // 提交当前题目答案
+        async function submitAnswer() {
+            // 停止当前题目的所有计时器
+            currentAnswerLines.forEach(line => {
+                if (line.hintTimeout) {
+                    clearTimeout(line.hintTimeout);
+                }
+            });
+
+            // 显示加载状态
+            document.getElementById('submitAnswerBtn').disabled = true;
+            document.getElementById('submitAnswerBtn').innerHTML = '<i class="bi bi-hourglass-split me-1"></i> 提交中...';
+
+            try {
+                // 规范化答案比较函数
+                function normalizeAnswer(answer) {
+                    if (!answer) return "";
+                    return answer.trim().toLowerCase();
+                }
+
+                // 重新计算正确数量（使用规范化比较）
+                let correctCount = 0;
+                for (let i = 0; i < currentAnswerLines.length; i++) {
+                    const line = currentAnswerLines[i];
+                    const normalizedUserAnswer = normalizeAnswer(line.studentAnswer);
+                    const normalizedCorrectAnswer = normalizeAnswer(line.correctAnswer);
+
+                    // 更新正确状态
+                    line.isCorrect = normalizedUserAnswer === normalizedCorrectAnswer;
+                    if (line.isCorrect) {
+                        correctCount++;
+                    }
+
+                    console.log(`答案比较 ${i+1}: "${normalizedUserAnswer}" vs "${normalizedCorrectAnswer}" = ${line.isCorrect}`);
+                }
+
+                const totalCount = currentAnswerLines.length;
+                const accuracy = (correctCount / totalCount) * 100;
+
+                console.log("答案比较调试信息:");
+                console.log("正确数量:", correctCount, "/", totalCount);
+
+                // 保存当前题目结果
+                quizResults.push({
+                    questionId: currentQuestion.id,
+                    correctCount: correctCount,
+                    totalCount: totalCount,
+                    accuracy: accuracy,
+                    answers: currentAnswerLines.map(line => ({
+                        studentAnswer: line.studentAnswer,
+                        correctAnswer: line.correctAnswer,
+                        isCorrect: line.isCorrect,
+                        hintUsed: line.hintUsed
+                    }))
+                });
+
+                // 如果是最后一题，提交所有结果
+                if (currentQuestionIndex === allQuestions.length - 1) {
+                    await submitAllAnswers();
+                } else {
+                    // 显示下一题按钮
+                    document.getElementById('submitAnswerBtn').classList.add('d-none');
+                    document.getElementById('nextQuestionBtn').classList.remove('d-none');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('提交答案失败: ' + error.message);
+                document.getElementById('submitAnswerBtn').disabled = false;
+                document.getElementById('submitAnswerBtn').innerHTML = '<i class="bi bi-check-circle me-1"></i> 提交本题答案';
+            }
+        }
+
+        // 下一题
+        function nextQuestion() {
+            currentQuestionIndex++;
+            displayCurrentQuestion();
+        }
+
+        // 提交所有答案
+        async function submitAllAnswers() {
+            const endTime = new Date();
+            const duration = Math.floor((endTime - quizStartTime) / 1000);
+
+            try {
+                // 提交所有题目的答案
+                for (let i = 0; i < quizResults.length; i++) {
+                    const result = quizResults[i];
+                    const question = allQuestions[i];
+
+                    const submitResponse = await fetch(`${API_BASE}/student/submit`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            student_id: studentInfo.id,
+                            name: studentInfo.name,
+                            question_id: question.id,
+                            answers: result.answers.map(a => a.studentAnswer),
+                            time_used: Math.floor(duration / quizResults.length), // 平均时间
+                            hint_used: result.answers.some(a => a.hintUsed)
+                        })
+                    });
+
+                    if (!submitResponse.ok) {
+                        console.error(`提交题目 ${i + 1} 失败`);
+                    }
+                }
+
+                // 显示最终结果
+                showFinalResults();
+            } catch (error) {
+                console.error('提交所有答案失败:', error);
+                alert('提交答案失败: ' + error.message);
+            }
+        }
+
+        // 显示最终结果
+        function showFinalResults() {
+            clearInterval(timerInterval);
+            const endTime = new Date();
+            const duration = Math.floor((endTime - quizStartTime) / 1000);
+
+            // 计算总分
+            const totalCorrect = quizResults.reduce((sum, result) => sum + result.correctCount, 0);
+            const totalQuestions = quizResults.reduce((sum, result) => sum + result.totalCount, 0);
+            const totalAccuracy = (totalCorrect / totalQuestions) * 100;
+
+            document.getElementById('quiz-section').classList.add('d-none');
+            document.getElementById('result-section').classList.remove('d-none');
+
+            document.getElementById('finalScore').textContent = `${totalCorrect}/${totalQuestions}`;
+            document.getElementById('finalAccuracy').textContent = `正确率: ${totalAccuracy.toFixed(1)}%`;
+            document.getElementById('finalDuration').textContent = formatTime(duration);
+
+            // 显示详细结果
+            let answerDetailsHtml = '';
+            quizResults.forEach((result, questionIndex) => {
+                const question = allQuestions[questionIndex];
+                answerDetailsHtml += `
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <strong>题目 ${questionIndex + 1}:</strong> ${question.title}
+                        </div>
+                        <div class="card-body">
+                            ${question.image_url &&
+                             question.image_url.trim() !== '' &&
+                             question.image_url !== 'null' ?
+                                `<img src="${question.image_url}" alt="题目图片" class="question-image mb-3" style="max-height: 150px;">` : ''}
+                            <div class="accuracy-display mb-2">本题正确率: ${result.accuracy.toFixed(1)}%</div>
+                `;
+
+                result.answers.forEach((answer, answerIndex) => {
+                    const resultClass = answer.isCorrect ? 'correct-answer' : 'wrong-answer';
+                    const resultIcon = answer.isCorrect ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger';
+                    const hintText = answer.hintUsed ? ' <span class="badge bg-warning text-dark">使用了提示</span>' : '';
+
+                    answerDetailsHtml += `
+                        <div class="mb-2">
+                            <div class="d-flex align-items-center">
+                                <span class="fw-bold me-2">答案 ${answerIndex + 1}:</span>
+                                <span class="${resultClass}">${answer.studentAnswer}</span>
+                                <i class="bi ${resultIcon} ms-2"></i>
+                                ${hintText}
+                            </div>
+                            ${!answer.isCorrect ? `<div class="text-muted small mt-1">正确答案: ${answer.correctAnswer}</div>` : ''}
+                        </div>
+                    `;
+                });
+
+                answerDetailsHtml += `</div></div>`;
+            });
+
+            document.getElementById('answer-details').innerHTML = answerDetailsHtml;
+        }
+
+        // 重新答题
+        function restartQuiz() {
+            document.getElementById('result-section').classList.add('d-none');
+            document.getElementById('student-info-section').classList.remove('d-none');
+            document.getElementById('studentName').value = '';
+        }
+
+        // 开始计时器
+        function startTimer() {
+            let seconds = 0;
+            timerInterval = setInterval(() => {
+                seconds++;
+                document.getElementById('timer').textContent = formatTime(seconds);
+            }, 1000);
+        }
+
+        // ==================== 教师功能 ====================
+        // 教师登录
+        async function teacherLogin(e) {
+            e.preventDefault();
+
+            const username = document.getElementById('teacherUsername').value;
+            const password = document.getElementById('teacherPassword').value;
+
+            if (!username || !password) {
+                alert('请输入用户名和密码');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/teacher/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!response.ok) {
+                    throw new Error('登录请求失败');
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    // 保存token（只在内存中，不保存到本地存储）
+                    teacherToken = data.token;
+
+                    // 更新UI
+                    document.body.classList.add('teacher-logged-in');
+
+                    // 关闭登录模态框
+                    const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+                    loginModal.hide();
+
+                    // 清空登录表单
+                    document.getElementById('teacherUsername').value = '';
+                    document.getElementById('teacherPassword').value = '';
+
+                    // 加载教师数据
+                    loadQuestions();
+                    loadRecords();
+
+                    alert('登录成功!');
+                } else {
+                    alert('登录失败: ' + data.message);
+                }
+            } catch (error) {
+                console.error('登录失败:', error);
+                alert('登录失败: ' + error.message);
+            }
+        }
+
+        // 教师退出
+        function teacherLogout() {
+            teacherToken = null;
+            document.body.classList.remove('teacher-logged-in');
+            alert('已退出教师模式');
+        }
+
+        // 处理图片上传
+        async function handleImageUpload() {
+            const fileInput = document.getElementById('imageUpload');
+            const file = fileInput.files[0];
+
+            if (!file) return;
+
+            // 验证图片格式
+            const allowedExtensions = ['png', 'jpg', 'jpeg', 'gif'];
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            if (!allowedExtensions.includes(fileExtension)) {
+                alert('仅支持 PNG、JPG、JPEG、GIF 格式的图片');
+                fileInput.value = '';
+                return;
+            }
+
+            // 显示预览
+            const preview = document.getElementById('imagePreview');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 添加题目
+        async function addQuestion(e) {
+            e.preventDefault();
+
+            if (!teacherToken) {
+                alert('请先登录教师账号');
+                return;
+            }
+
+            const title = document.getElementById('questionTitle').value.trim();
+            const answers = document.getElementById('questionAnswers').value.trim();
+            const imageFile = document.getElementById('imageUpload').files[0];
+
+            if (!title || !answers) {
+                alert('请填写题目和答案');
+                return;
+            }
+
+            // 显示加载状态
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> 上传中...';
+            submitBtn.disabled = true;
+
+            // 格式化答案（按行分割）
+            const answersArray = answers.split('\n').filter(a => a.trim());
+
+            try {
+                let imageUrl = null;
+
+                // 如果有图片，先上传图片
+                if (imageFile) {
+                    console.log('开始上传图片:', imageFile.name);
+
+                    const formData = new FormData();
+                    formData.append('image', imageFile);
+
+                    const uploadResponse = await fetch(`${API_BASE}/upload-image`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': teacherToken
+                        },
+                        body: formData
+                    });
+
+                    if (!uploadResponse.ok) {
+                        const errorData = await uploadResponse.json();
+                        throw new Error(errorData.error || '图片上传失败');
+                    }
+
+                    const uploadData = await uploadResponse.json();
+                    if (uploadData.error) {
+                        throw new Error(uploadData.error);
+                    }
+
+                    imageUrl = uploadData.image_url;
+                    console.log('图片上传成功，URL:', imageUrl);
+                }
+
+                // 添加题目到数据库
+                const questionData = {
+                    title: title,
+                    answers: answersArray
+                };
+
+                // 只有在有图片URL时才添加image_url字段
+                if (imageUrl) {
+                    questionData.image_url = imageUrl;
+                }
+
+                console.log('提交题目数据:', questionData);
+
+                const questionResponse = await fetch(`${API_BASE}/questions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': teacherToken
+                    },
+                    body: JSON.stringify(questionData)
+                });
+
+                if (!questionResponse.ok) {
+                    throw new Error('添加题目到数据库失败');
+                }
+
+                const questionDataResponse = await questionResponse.json();
+                if (!questionDataResponse.success) {
+                    throw new Error(questionDataResponse.error || '添加题目失败');
+                }
+
+                alert('题目添加成功!');
+
+                // 重置表单
+                document.getElementById('addQuestionForm').reset();
+                document.getElementById('imagePreview').style.display = 'none';
+                document.getElementById('imageUpload').value = '';
+
+                // 刷新题目列表
+                loadQuestions();
+
+            } catch (error) {
+                console.error('添加题目失败:', error);
+                alert('添加题目失败: ' + error.message);
+            } finally {
+                // 恢复按钮状态
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        // 删除题目
+        async function deleteQuestion(questionId) {
+            if (!confirm('确定要删除这个题目吗？')) {
+                return;
+            }
+
+            if (!teacherToken) {
+                alert('请先登录教师账号');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/questions/${questionId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': teacherToken
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('删除题目失败');
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || '删除题目失败');
+                }
+
+                alert('题目删除成功!');
+                loadQuestions();
+            } catch (error) {
+                console.error('删除题目失败:', error);
+                alert('删除题目失败: ' + error.message);
+            }
+        }
+
+        // 加载题目列表
+        async function loadQuestions() {
+            try {
+                const response = await fetch(`${API_BASE}/questions`);
+
+                if (!response.ok) {
+                    throw new Error('获取题目失败');
+                }
+
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                const questions = data.data || [];
+                document.getElementById('questionsCount').textContent = `${questions.length} 个题目`;
+
+                let questionsHtml = '';
+                if (questions.length === 0) {
+                    questionsHtml = '<div class="text-center text-muted py-4">暂无题目</div>';
+                } else {
+                    questions.forEach(question => {
+                        questionsHtml += `
+                            <div class="card question-card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h6 class="card-title">${question.title}</h6>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteQuestion('${question.id}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                    ${question.image_url &&
+                                     question.image_url.trim() !== '' &&
+                                     question.image_url !== 'null' ? `
+                                        <div class="mt-2">
+                                            <img src="${question.image_url}" alt="题目图片" class="question-image" style="max-height: 150px;">
+                                        </div>
+                                    ` : '<div class="text-muted small mt-2">无图片</div>'}
+                                    <div class="mt-2">
+                                        <span class="fw-bold">正确答案:</span>
+                                        <ul class="mt-1">
+                                            ${question.answers.map(answer => `<li>${answer}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                    <div class="text-muted small mt-2">
+                                        创建时间: ${new Date(question.created_at).toLocaleString()}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                document.getElementById('questionsList').innerHTML = questionsHtml;
+            } catch (error) {
+                console.error('加载题目失败:', error);
+                document.getElementById('questionsList').innerHTML = '<div class="text-center text-danger py-4">加载题目失败: ' + error.message + '</div>';
+            }
+        }
+
+        // 加载成绩记录
+        async function loadRecords() {
+            if (!teacherToken) {
+                alert('请先登录教师账号');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/records`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': teacherToken
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('获取记录失败');
+                }
+
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                const records = data.data || [];
+
+                let recordsHtml = '';
+                if (records.length === 0) {
+                    recordsHtml = '<tr><td colspan="7" class="text-center text-muted py-4">暂无成绩记录</td></tr>';
+                } else {
+                    records.forEach(record => {
+                        recordsHtml += `
+                            <tr>
+                                <td>${record.student_name}</td>
+                                <td><small class="text-muted">${record.student_id.substring(0, 8)}...</small></td>
+                                <td>${record.total_correct}/${record.total_questions}</td>
+                                <td>${record.accuracy.toFixed(1)}%</td>
+                                <td>${formatTime(record.total_time)}</td>
+                                <td>${new Date(record.last_submitted_at).toLocaleString()}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary view-detail-btn" data-student-id="${record.student_id}">
+                                        <i class="bi bi-eye me-1"></i> 查看详情
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                document.getElementById('recordsTable').innerHTML = recordsHtml;
+
+                // 绑定查看详情按钮事件
+                document.querySelectorAll('.view-detail-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const studentId = this.getAttribute('data-student-id');
+                        loadStudentDetail(studentId);
+                    });
+                });
+            } catch (error) {
+                console.error('加载记录失败:', error);
+                document.getElementById('recordsTable').innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">加载记录失败: ' + error.message + '</td></tr>';
+            }
+        }
+
+        // 清空所有记录
+        async function clearAllRecords() {
+            if (!confirm('确定要清空所有答题记录吗？此操作不可恢复！')) {
+                return;
+            }
+
+            if (!teacherToken) {
+                alert('请先登录教师账号');
+                return;
+            }
+
+            try {
+                console.log('开始清空记录...');
+                const response = await fetch(`${API_BASE}/records/clear`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': teacherToken
+                    }
+                });
+
+                console.log('清空记录响应状态:', response.status);
+
+                const responseText = await response.text();
+                console.log('清空记录响应内容:', responseText);
+
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('响应解析失败:', parseError);
+                    throw new Error('服务器响应格式错误');
+                }
+
+                if (!response.ok) {
+                    throw new Error(data.error || `清空记录失败: ${response.status}`);
+                }
+
+                if (!data.success) {
+                    throw new Error(data.error || '清空记录失败');
+                }
+
+                alert('所有答题记录已清空！');
+                loadRecords();
+                // 同时关闭学生详情卡片
+                closeStudentDetail();
+            } catch (error) {
+                console.error('清空记录失败:', error);
+                alert('清空记录失败: ' + error.message);
+            }
+        }
+
+        // 更新教师账号
+        async function updateTeacherAccount(e) {
+            e.preventDefault();
+
+            if (!teacherToken) {
+                alert('请先登录教师账号');
+                return;
+            }
+
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newUsername = document.getElementById('newUsername').value;
+            const newPassword = document.getElementById('newPassword').value;
+
+            if (!currentPassword || !newUsername || !newPassword) {
+                alert('请填写所有字段');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/teacher/update-account`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': teacherToken
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_username: newUsername,
+                        new_password: newPassword
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('更新账号失败');
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || '更新账号失败');
+                }
+
+                alert('账号信息已更新，请重新登录！');
+                teacherLogout();
+
+                // 清空表单
+                document.getElementById('updateAccountForm').reset();
+
+            } catch (error) {
+                console.error('更新账号失败:', error);
+                alert('更新账号失败: ' + error.message);
+            }
+        }
+
+        // ==================== 学生详情功能 ====================
+        // 加载学生详细记录
+        // 加载学生详细记录 - 添加调试信息
+        // 加载学生详细记录 - 添加调试信息
+        async function loadStudentDetail(studentId) {
+            try {
+                console.log("开始加载学生详情，学生ID:", studentId);
+
+                const response = await fetch(`${API_BASE}/analysis/student/${studentId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': teacherToken
+                    }
+                });
+
+                if (!response.ok) throw new Error('获取学生详情失败');
+                const data = await response.json();
+
+                console.log("学生详情API响应:", data);
+
+                if (data.success) {
+                    displayStudentDetail(data);
+                    document.getElementById('studentDetailCard').classList.remove('d-none');
+
+                    // 滚动到详情卡片
+                    document.getElementById('studentDetailCard').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert('获取学生详情失败: ' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                console.error('加载学生详情失败:', error);
+                alert('加载学生详情失败: ' + error.message);
+            }
+        }
+
+        // 显示学生详细记录
+        function displayStudentDetail(data) {
+            const studentInfo = data.student_info;
+
+            // 更新基本信息
+            document.getElementById('detailStudentName').textContent = studentInfo.student_name;
+            document.getElementById('detailAccuracy').textContent = studentInfo.overall_accuracy.toFixed(1) + '%';
+            document.getElementById('detailTotalCorrect').textContent = studentInfo.total_correct;
+            document.getElementById('detailTotalQuestions').textContent = studentInfo.total_questions;
+
+            // 显示详细记录
+            displayStudentRecords(data.detail_records, data.questions);
+        }
+
+        // 显示学生答题记录
+        // 显示学生答题记录 - 修改为分题目详细显示
+// 显示学生答题记录 - 完全重写版本
+// 显示学生答题记录 - 修复版本
+function displayStudentRecords(records, questions) {
+    const container = document.getElementById('studentRecordsList');
+
+    console.log("显示学生记录 - 记录数据:", records);
+    console.log("显示学生记录 - 题目数据:", questions);
+
+    if (!records || records.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-inbox fs-1"></i>
+                <p class="mt-2">暂无答题记录</p>
+                <small>学生还没有完成任何答题</small>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+
+    // 按时间倒序排列，最新的记录在前面
+    records.sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at));
+
+    records.forEach((record, recordIndex) => {
+        const question = questions && questions[record.question_id] ?
+            questions[record.question_id] : {
+                title: `题目 ${recordIndex + 1}`,
+                answers: ['暂无正确答案'],
+                image_url: null
+            };
+
+        // 计算正确率
+        const accuracy = record.accuracy || (record.correct_count / record.total_count * 100);
+
+        html += `
+            <div class="card student-record-card mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi bi-journal-text me-2"></i>
+                        ${question.title}
+                    </h6>
+                    <div>
+                        <span class="badge ${accuracy >= 80 ? 'bg-success' : accuracy >= 60 ? 'bg-warning' : 'bg-danger'} me-2">
+                            正确率: ${accuracy.toFixed(1)}%
+                        </span>
+                        <span class="badge bg-info">
+                            ${record.correct_count}/${record.total_count}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    ${question.image_url && question.image_url.trim() !== '' && question.image_url !== 'null' ?
+                        `<div class="text-center mb-3">
+                            <img src="${question.image_url}" alt="题目图片" class="question-image" style="max-height: 200px;">
+                        </div>` : ''}
+
+                    <!-- 答题统计 -->
+                    <div class="row mb-4">
+                        <div class="col-md-3 col-6">
+                            <div class="card text-center border-0 bg-light">
+                                <div class="card-body py-2">
+                                    <h5 class="card-title text-primary mb-0">${record.correct_count}/${record.total_count}</h5>
+                                    <small class="text-muted">得分</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="card text-center border-0 bg-light">
+                                <div class="card-body py-2">
+                                    <h5 class="card-title text-info mb-0">${record.time_used || 0}秒</h5>
+                                    <small class="text-muted">用时</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="card text-center border-0 bg-light">
+                                <div class="card-body py-2">
+                                    <h5 class="card-title ${record.hint_used ? 'text-warning' : 'text-success'} mb-0">
+                                        ${record.hint_used ? '是' : '否'}
+                                    </h5>
+                                    <small class="text-muted">使用提示</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="card text-center border-0 bg-light">
+                                <div class="card-body py-2">
+                                    <small class="text-muted d-block">提交时间</small>
+                                    <small class="text-secondary">
+                                        ${new Date(record.submitted_at).toLocaleDateString()}
+                                        ${new Date(record.submitted_at).toLocaleTimeString()}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 答案对比详情 -->
+                    <div class="answer-comparison">
+                        <h6 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-list-check me-2"></i>
+                            答案详情对比
+                        </h6>
+
+                        ${generateDetailedAnswerComparison(record, question)}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+// 生成详细的答案对比
+// 生成详细的答案对比 - 修复版本
+function generateDetailedAnswerComparison(record, question) {
+    let html = '';
+
+    // 检查是否有详细的答案对比数据
+    if (record.answer_comparison && Array.isArray(record.answer_comparison) && record.answer_comparison.length > 0) {
+        console.log("使用详细答案对比数据:", record.answer_comparison);
+
+        html += `
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="60">序号</th>
+                            <th>学生答案</th>
+                            <th>正确答案</th>
+                            <th width="80">状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        record.answer_comparison.forEach((answer, index) => {
+            const isCorrect = answer.is_correct;
+            const statusClass = isCorrect ? 'success' : 'danger';
+            const statusIcon = isCorrect ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+            const statusText = isCorrect ? '正确' : '错误';
+
+            html += `
+                <tr class="${isCorrect ? 'table-success' : 'table-danger'}">
+                    <td class="text-center fw-bold">${index + 1}</td>
+                    <td>
+                        <span class="${isCorrect ? 'text-success' : 'text-danger'} fw-bold">
+                            ${answer.student_answer || '未回答'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="text-success fw-bold">${answer.correct_answer}</span>
+                    </td>
+                    <td class="text-center">
+                        <i class="bi ${statusIcon} text-${statusClass}"></i>
+                        <small class="d-block">${statusText}</small>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } else {
+        // 如果没有详细答案对比数据，显示基本信息
+        console.log("没有详细答案对比数据，使用基本信息显示");
+
+        html += `
+            <div class="alert alert-info">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-info-circle me-2 fs-5"></i>
+                    <div>
+                        <strong>答题概况</strong>
+                        <div class="mt-1">
+                            答对 <span class="text-success fw-bold">${record.correct_count}</span> 题，
+                            答错 <span class="text-danger fw-bold">${record.total_count - record.correct_count}</span> 题，
+                            共计 <span class="text-primary fw-bold">${record.total_count}</span> 题
+                        </div>
+                        ${record.hint_used ? '<div class="mt-1"><i class="bi bi-lightbulb text-warning me-1"></i>本次答题使用了提示功能</div>' : ''}
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <strong>正确答案：</strong>
+                <div class="mt-2">
+                    ${question.answers.map((answer, index) => `
+                        <div class="mb-2">
+                            <span class="badge bg-primary me-2">${index + 1}</span>
+                            <code class="bg-light p-2 rounded">${answer}</code>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    return html;
+}
+    </script>
+</body>
+</html>
