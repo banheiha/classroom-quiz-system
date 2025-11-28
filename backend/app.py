@@ -13,6 +13,18 @@ from collections import Counter
 from flask import send_from_directory
 from pathlib import Path
 # ==================== 配置初始化 ====================
+
+# ==================== 修复环境变量问题 ====================
+# 如果环境变量不存在，直接设置默认值
+if not os.getenv("SUPABASE_URL"):
+    os.environ["SUPABASE_URL"] = "https://veffyhfyxydywjapjpgl.supabase.co"
+    os.environ["SUPABASE_KEY"] = "eyJhb6ci0iJIUzI1NiISInRo5cCI6IKpXVCJ9.eyJpc35Mi0iJzdXBhYmFzZSIsSInJLZiI6InZLZmZ5a6Z5eHLKeXdqYXBqc6dsIIi"
+    os.environ["TEACHER_USERNAME"] = "admin" 
+    os.environ["TEACHER_PASSWORD"] = "654321"
+    print("使用硬编码的环境变量")
+else:
+    print("使用Vercel环境变量")
+# ==================== 修复结束 ====================
 load_dotenv()
 
 app = Flask(__name__)
